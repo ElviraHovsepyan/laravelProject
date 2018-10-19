@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class ChangeUsersTableAddToken extends Migration
+class ChangeProductsTableImage extends Migration
 {
     /**
      * Run the migrations.
@@ -13,9 +13,9 @@ class ChangeUsersTableAddToken extends Migration
      */
     public function up()
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('token')->nullable();
-            $table->unsignedInteger('role_id')->default(0);
+        Schema::table('products', function (Blueprint $table) {
+            $table->string('image',255)->nullable();
+            $table->string('code',100)->nullable();
         });
     }
 
@@ -26,9 +26,9 @@ class ChangeUsersTableAddToken extends Migration
      */
     public function down()
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('token');
-            $table->dropColumn('role_id');
+        Schema::table('products', function (Blueprint $table) {
+            $table->dropColumn('image');
+            $table->dropColumn('code');
         });
     }
 }

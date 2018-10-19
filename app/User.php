@@ -2,7 +2,7 @@
 
 namespace App;
 
-use App\Http\Controllers\ApiController;
+use App\Http\Controllers\Api\ApiController;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -32,16 +32,41 @@ class User extends Authenticatable
         'password', 'remember_token',
     ];
 
-    public static $incorrectEmail = 'Please check that you have entered your email correctly.';
-    public static $incorrectPassword = 'Your password does not match.';
+    public static $incorrectEmail = 'Invalid Email or password';
     public static $verifyEmail = 'Please check your Email to verify your account.';
     public static $loginSuccess = 'You have logged in successfully';
 
+    public function categories(){
+        return $this->belongsToMany('App\Category','users_categories','user_id','category_id');
+    }
+
+    public function products(){
+        return $this->belongsToMany('App\Product','users_productss','user_id','product_id');
+    }
+
+    public function roles(){
+        return $this->belongsTo('App\Role','role_id');
+    }
+
+    public function user_details(){
+        return $this->hasOne('App\User_Detail','user_id');
+    }
+
+    public function clients(){
+        return $this->hasMany('App\Client','user_id','id');
+    }
+
+    public function invoices(){
+        return $this->hasMany('App\Invoice','user_id','id');
+    }
+
     public static function validate($data){
         $rules = [
-            'username' => 'required|string|max:255',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|confirmed'
+            'password' => 'required|string|min:6',
+            'company_name' => 'required|string|min:2|max:255'
         ];
         $validator = Validator::make($data, $rules);
         if ($validator->fails()) {
@@ -53,19 +78,25 @@ class User extends Authenticatable
     }
 
     public static function register($data){
-        $vCode = str_random(60);
-        $username = $data['username'];
+        $first_name = $data['first_name'];
+        $last_name = $data['last_name'];
         $email = $data['email'];
         $password = $data['password'];
         $token = Hash::make($email);
+        $confirmation_token = str_random(60);
         $user = new User();
-        $user->name = $username;
+        $user->first_name = $first_name;
+        $user->last_name = $last_name;
         $user->email = $email;
         $user->password = Hash::make($password);
-        $user->token = $token;
-        $user->verified = false;
-        $user->verification_code = $vCode;
+        $user->api_token = $token;
+        $user->status = 0;
+        $user->role_id = Role::getRoleId();
+        $user->confirmation_token = $confirmation_token;
         $user->save();
+        $user_id = $user->id;
+        $company_name = $data['company_name'];
+        User_Detail::saveCompanyName($user_id, $company_name);
 //        $mail = sendEmail($username,$vCode);
         return 'success';
     }
@@ -77,33 +108,27 @@ class User extends Authenticatable
         if($check){
             $hashedPassword = $check->password;
             if(Hash::check($password, $hashedPassword)){
-                if($check->verified==false){
-                    if($api){
-                        return ApiController::$apiVerifyEmail;
-                    }
-                    return self::$verifyEmail;
+                if($check->status==0){
+                    if($api) return ApiController::$apiVerifyEmail;
+                    return 'verify';
                 } else {
                     if($api){
-                        $token = $check->token;
+                        $token = $check->api_token;
                         return ApiController::apiLoginSuccess($token);
                     }
                     $user_id = $check->id;
-                    Auth::loginUsingId($user_id);
+                    if(!empty($data['remember'])) Auth::loginUsingId($user_id, true);
+                    else Auth::loginUsingId($user_id);
                     return self::$loginSuccess;
                 }
             } else {
-                if($api){
-                    return ApiController::$apiIncorrectPassword;
-                }
-                return self::$incorrectPassword;
+                if($api) return ApiController::$apiIncorrectPassword;
+                return self::$incorrectEmail;
             }
         } else {
-            if($api){
-                return ApiController::$apiIncorrectEmail;
-            }
+            if($api) return ApiController::$apiIncorrectEmail;
             return self::$incorrectEmail;
         }
     }
 }
-
 

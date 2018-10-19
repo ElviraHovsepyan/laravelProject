@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class ChangeUsersTableVerify extends Migration
+class CreateUsersProductsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,10 +13,10 @@ class ChangeUsersTableVerify extends Migration
      */
     public function up()
     {
-        Schema::table('Users', function (Blueprint $table) {
-            $table->boolean('verified');
-            $table->string('verification_code');
-
+        Schema::create('users_products', function (Blueprint $table) {
+            $table->increments('id');
+            $table->integer('product_id')->default(0);
+            $table->integer('user_id')->default(0);
         });
     }
 
@@ -27,9 +27,6 @@ class ChangeUsersTableVerify extends Migration
      */
     public function down()
     {
-        Schema::table('Users', function (Blueprint $table) {
-            $table->dropColumn('verified');
-            $table->dropColumn('verification_code');
-        });
+        Schema::dropIfExists('users_products');
     }
 }
