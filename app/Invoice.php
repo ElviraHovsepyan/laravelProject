@@ -36,7 +36,6 @@ class Invoice extends Model
     }
 
     public static function getInvoices($user_id,$key = false, $order, $take,$skip = false){
-
         $q = Invoice::with('invoice_products.products')
             ->whereHas('users',function ($query) use ($user_id,$key){
             self::setQuery($query, $user_id, $key);
